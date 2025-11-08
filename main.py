@@ -88,6 +88,10 @@ def parse_chest_page(url, session):
                 if ans == "y":
                     items.append({"id": item_id, "name": item_name})
                     return items
+            else:
+                items.append({"id": item_id, "name": item_name})
+    return items
+                
             
 
 
@@ -109,6 +113,7 @@ def discover_transfer_from_element(elem_html, s):
         if href.startswith("#"):
             continue
         items = parse_chest_page(urljoin(FULL_URL, href), s)
+
         payload = {}
         for item in items:
             payload.setdefault("chest_items[]", [])
@@ -124,6 +129,8 @@ def discover_transfer_from_element(elem_html, s):
     # 3) buttons / inputs with onclick -> sometimes contain JS: location='...'
     onclicks = []
     tag = soup.find()
+
+
     gid = None
     gid = tag.find("input", {"name": "cart_items[]"})
     if gid:
@@ -281,6 +288,7 @@ def process_cookie_file(cookie_file, PROMO_CODE):
     acct = os.path.splitext(os.path.basename(cookie_file))[0]
     s = session_from_cookies(cdict)
 #    print(PROMO_CODE)
+    
     if (PROMO_CODE != ""):
         activate_promo_pin(s, PROMO_CODE)
     while True:
@@ -288,7 +296,6 @@ def process_cookie_file(cookie_file, PROMO_CODE):
         r = s.get(FULL_URL, timeout=15)
         r.raise_for_status()
         html = r.text
-
         # save page
         page_path = os.path.join(OUT_DIR, f"{acct}.page.html")
         with open(page_path, "w", encoding="utf-8") as f:
@@ -307,8 +314,8 @@ def process_cookie_file(cookie_file, PROMO_CODE):
         for i, cand in enumerate(candidates):
             elem_html = cand["html"]
             # save element to file для ручной проверки
-            with open(os.path.join(OUT_DIR, f"{acct}.gift.{i}.html"), "w", encoding="utf-8") as f:
-                f.write(elem_html)
+            #with open(os.path.join(OUT_DIR, f"{acct}.gift.{i}.html"), "w", encoding="utf-8") as f:
+            #    f.write(elem_html)
             discoveries = discover_transfer_from_element(elem_html, s)
             results["candidates"].append({
                 "index": i,
@@ -316,6 +323,8 @@ def process_cookie_file(cookie_file, PROMO_CODE):
                 "short_html": (elem_html[:400] + "...") if len(elem_html) > 400 else elem_html,
                 "discoveries": discoveries
             })
+            
+        
 
         # выводим кандидатов
 #        print(json.dumps(results["candidates"], ensure_ascii=False, indent=2))
