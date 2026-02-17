@@ -11,14 +11,15 @@ import os, json, re, time
 from bs4 import BeautifulSoup
 import requests
 from urllib.parse import urljoin
+from playwright.sync_api import sync_playwright
 
 # --- Настройки ---
 BASE = "https://pwonline.ru"
 PAGE = "/promo_items.php"
 FULL_URL = BASE + PAGE
 
-COOKIES_DIR = "./cookies"
-OUT_DIR = "./out"
+COOKIES_DIR = "C:/Users/caham/OneDrive/Desktop/PW/cookies"
+OUT_DIR = "C:/Users/caham/OneDrive/Desktop/PW/out"
 os.makedirs(OUT_DIR, exist_ok=True)
 
 # headers взяты и упрощены из вашего cURL — достаточно для requests
@@ -46,11 +47,20 @@ def load_cookie_dict(path):
         return {str(k): str(v) for k, v in data.items()}
     raise ValueError("Unsupported cookie file format: " + repr(type(data)))
 
-def session_from_cookies(cdict):
-    s = requests.Session()
-    s.headers.update(COMMON_HEADERS)
-    s.cookies.update(cdict)
-    return s
+def session_from_cookies(cookie_file):
+    if not is_authorized(cookie_file):
+        print(f"❌ Cookies невалидны: {cookie_file}")
+        manual_login(cookie_file)
+
+    session = requests.Session()
+
+    with open(cookie_file, "r", encoding="utf-8") as f:
+        storage = json.load(f)
+
+    for cookie in storage.get("cookies", []):
+        session.cookies.set(cookie["name"], cookie["value"])
+
+    return session
 
 def find_gift_elements(html):
     soup = BeautifulSoup(html, "html.parser")
@@ -92,7 +102,54 @@ def parse_chest_page(url, session):
                 items.append({"id": item_id, "name": item_name})
     return items
                 
-            
+def is_authorized(cookie_file):
+    if not os.path.exists(cookie_file):
+        print("🚫 не найден файл")
+        return False
+    try:
+        with open(cookie_file, "r", encoding="utf-8") as f:
+            storage = json.load(f)
+    except Exception:
+        return False
+    cookies = storage.get("cookies", [])
+    if not cookies:
+        print("🚫 файл пуст")
+        return False
+
+    # Проверяем реальную авторизацию через запрос
+    session = requests.Session()
+    for cookie in cookies:
+        session.cookies.set(
+            cookie["name"],
+            cookie["value"],
+            domain=cookie.get("domain"),
+        )
+    try:
+        r = session.get(FULL_URL, timeout=10)
+    except Exception:
+        print("🚫 не удалось получить сессию")
+        return False
+    # 🔎 Тут нужно указать реальный индикатор авторизации
+    # Например наличие username или кнопки выхода
+    if "Войти" in r.text:
+        print("🚫 Сайт считает что мы не авторизованы")
+        return False
+    return True
+
+def manual_login(cookie_file):
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=False)
+        context = browser.new_context()
+
+        page = context.new_page()
+        page.goto("https://pwonline.ru/")
+
+        print(f"🔐 Авторизуйся для аккаунта: {cookie_file}")
+
+        page.wait_for_url("https://pwonline.ru/usercp.php", timeout=0)
+
+        context.storage_state(path=cookie_file)
+        browser.close()
 
 
 def discover_transfer_from_element(elem_html, s):
@@ -284,9 +341,8 @@ def activate_promo_pin(s, promo_code):
         print("❌ Ошибка при применении промокода:", e)
 # --- Main ---
 def process_cookie_file(cookie_file, PROMO_CODE):
-    cdict = load_cookie_dict(cookie_file)
     acct = os.path.splitext(os.path.basename(cookie_file))[0]
-    s = session_from_cookies(cdict)
+    s = session_from_cookies(cookie_file)
 #    print(PROMO_CODE)
     
     if (PROMO_CODE != ""):
