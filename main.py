@@ -18,7 +18,7 @@ BASE = "https://pwonline.ru"
 PAGE = "/promo_items.php"
 FULL_URL = BASE + PAGE
 
-COOKIES_DIR = cookies"
+COOKIES_DIR = "cookies"
 OUT_DIR = "out"
 os.makedirs(OUT_DIR, exist_ok=True)
 
