@@ -21,13 +21,6 @@
 ## Требования
 
 * Python 3.x
-* Установленные библиотеки: `requests`, `beautifulsoup4`
-
-Для установки зависимостей используйте pip:
-
-```bash
-pip install requests beautifulsoup4
-```
 
 ## Установка
 
