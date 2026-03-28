@@ -13,14 +13,16 @@ import requests
 from urllib.parse import urljoin
 from playwright.sync_api import sync_playwright
 
+os.environ["PLAYWRIGHT_BROWSERS_PATH"] = os.path.join(os.path.dirname(__file__), "browsers")
 # --- Настройки ---
 BASE = "https://pwonline.ru"
 PAGE = "/promo_items.php"
 FULL_URL = BASE + PAGE
 
-COOKIES_DIR = "cookies"
-OUT_DIR = "out"
+COOKIES_DIR = os.path.join(os.getcwd(), "cookies")
+OUT_DIR = os.path.join(os.getcwd(), "out")
 os.makedirs(OUT_DIR, exist_ok=True)
+
 
 # headers взяты и упрощены из вашего cURL — достаточно для requests
 COMMON_HEADERS = {
