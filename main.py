@@ -18,8 +18,8 @@ BASE = "https://pwonline.ru"
 PAGE = "/promo_items.php"
 FULL_URL = BASE + PAGE
 
-COOKIES_DIR = "cookies"
-OUT_DIR = "out"
+COOKIES_DIR = "C:/Users/caham/OneDrive/Desktop/PW/cookies"
+OUT_DIR = "C:/Users/caham/OneDrive/Desktop/PW/out"
 os.makedirs(OUT_DIR, exist_ok=True)
 
 # headers взяты и упрощены из вашего cURL — достаточно для requests
@@ -424,4 +424,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
